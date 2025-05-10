@@ -24,17 +24,121 @@ setInterval(cleanupCache, 60 * 60 * 1000);
 
 // Serve the index.html file for the root route
 router.get('/', (req, res) => {
+  // Calculate expiration one year from now
+  const oneYearFromNow = new Date();
+  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+  
+  // Set aggressive caching headers
+  res.set({
+    'Cache-Control': 'public, max-age=31536000', // Cache for 1 year (in seconds)
+    'Expires': oneYearFromNow.toUTCString(),
+    'ETag': '"homepage-v1"', // Simple version-based ETag
+    'X-Content-Type-Options': 'nosniff'
+  });
+  
   res.sendFile(path.join(__dirname, '../views/index.html'));
 });
 
 router.get('/word-usage', async (req, res) => {
   const word = req.query.word;
   console.log('Word:', word);
-  if (!word || word.length === 0) {
+  if (!word || word.trim().length === 0) {
     console.log('No word provided');
     res.sendFile(path.join(__dirname, '../views/404.html'));
     return; // Add return to prevent further execution
   }
+
+   // Fix the contentstack check and add redirection
+  // In your word-usage route handler
+if(word.toLowerCase() === 'contentstack') {
+  console.log('Showing loader before redirecting to Contentstack website');
+  
+  // Send an HTML page with loader and auto-redirect
+  return res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Redirecting to Contentstack</title>
+      <style>
+        body {
+          font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          margin: 0;
+          background-color: #f8f9fa;
+          color: #333;
+        }
+        
+        .loader-container {
+          text-align: center;
+        }
+        
+        h1 {
+          color: #2A4EDF;
+          margin-bottom: 2rem;
+        }
+        
+        .loader {
+          border: 8px solid #f3f3f3;
+          border-radius: 50%;
+          border-top: 8px solid #2A4EDF;
+          width: 60px;
+          height: 60px;
+          margin: 0 auto 2rem;
+          animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        .message {
+          margin-top: 1rem;
+          font-size: 1.2rem;
+        }
+        
+        .redirect-link {
+          display: inline-block;
+          margin-top: 2rem;
+          padding: 0.8rem 1.5rem;
+          background-color: #2A4EDF;
+          color: white;
+          text-decoration: none;
+          border-radius: 4px;
+          font-weight: 600;
+          transition: background-color 0.3s ease;
+        }
+        
+        .redirect-link:hover {
+          background-color: #1E3BC1;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="loader-container">
+        <h1>Redirecting to Contentstack</h1>
+        <div class="loader"></div>
+        <p class="message">Please wait while we connect you to Contentstack...</p>
+        <p>You will be redirected in a few seconds.</p>
+        <a href="https://www.contentstack.com/" class="redirect-link">Click here if you are not redirected automatically</a>
+      </div>
+      
+      <script>
+        // Redirect after 2.5 seconds
+        setTimeout(function() {
+          window.location.href = "https://www.contentstack.com/";
+        }, 2500);
+      </script>
+    </body>
+    </html>
+  `);
+}
 
   try {
     let data;
